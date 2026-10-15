@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full overflow-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>🚂 CVC 自然發音小火車遊樂園</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti 灑花特效 -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --font-phonics: 'Fredoka', 'Comic Sans MS', sans-serif;
+      --font-tc: 'Noto Sans TC', sans-serif;
+    }
+
+    /* 鎖死全螢幕，杜絕 iOS 橡皮筋滑動與彈出選單 */
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: auto;
+      font-family: var(--font-tc);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .font-phonics {
+      font-family: var(--font-phonics);
+      letter-spacing: 0.03em;
+    }
+
+    /* iOS 動態島與底部橫條安全邊界 */
+    .safe-top {
+      padding-top: max(0.5rem, env(safe-area-inset-top));
+    }
+    .safe-bottom {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    /* 兒童專用 3D 立體按鈕互動 */
+    .btn-3d {
+      transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s ease;
+    }
+    .btn-3d:active {
+      transform: translateY(4px);
+    }
+
+    /* 車廂彈跳動畫 */
+    @keyframes carriageBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      35% { transform: translateY(-12px) scale(1.05); }
+      65% { transform: translateY(-4px) scale(1.02); }
+    }
+    .animate-carriage-bounce {
+      animation: carriageBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* 溫和搖晃動畫（答錯或提示時無挫折感） */
+    @keyframes gentleWobble {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px) rotate(-1.5deg); }
+      40% { transform: translateX(6px) rotate(1.5deg); }
+      60% { transform: translateX(-4px) rotate(-1deg); }
+      80% { transform: translateX(4px) rotate(1deg); }
+    }
+    .animate-wobble {
+      animation: gentleWobble 0.4s ease-in-out;
+    }
+
+    /* 彈跳揭曉動畫 */
+    @keyframes popIn {
+      0% { transform: scale(0.6) rotate(-6deg); opacity: 0; }
+      75% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* 星星脈衝動畫 */
+    @keyframes starPulse {
+      0%, 100% { transform: scale(1); }
+      40% { transform: scale(1.3) rotate(12deg); }
+      70% { transform: scale(0.95) rotate(-4deg); }
+    }
+    .animate-star-pulse {
+      animation: starPulse 0.5s ease-out;
+    }
+
+    /* 蒸氣冒煙 */
+    @keyframes steamPuff {
+      0% { transform: translateY(0) scale(0.6); opacity: 0.8; }
+      100% { transform: translateY(-26px) translateX(-10px) scale(1.3); opacity: 0; }
+    }
+    .steam-1 { animation: steamPuff 2s infinite ease-out; }
+
+    /* 鐵軌枕木紋理 */
+    .railway-sleeper {
+      background: repeating-linear-gradient(
+        90deg,
+        #78350f 0px,
+        #78350f 14px,
+        transparent 14px,
+        transparent 38px
+      );
+    }
+
+    /* 隱藏滾動條但保持語意完整 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-[100dvh] max-h-[100dvh] flex flex-col justify-between bg-gradient-to-b from-sky-200 via-sky-100 to-emerald-100 text-slate-800 safe-top safe-bottom overflow-hidden relative">
+
+  <!-- =========================================================================
+       頂部共用導覽列 (Global Header) - 嚴格緊湊高度
+       ========================================================================= -->
+  <header class="shrink-0 w-full max-w-6xl mx-auto px-2.5 sm:px-6 pt-1 pb-1 z-30">
+    <div class="bg-white/95 backdrop-blur-md border-2 sm:border-4 border-sky-300 rounded-2xl sm:rounded-3xl px-3 sm:px-5 py-1.5 sm:py-2 shadow-md flex items-center justify-between gap-2">
+      
+      <!-- 左側：回首頁按鈕 (首頁時隱藏) -->
+      <div class="flex items-center min-w-[70px] sm:min-w-[130px]">
+        <button id="btn-home" onclick="switchPage('home')" class="hidden btn-3d bg-amber-400 hover:bg-amber-300 text-amber-950 font-black px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-amber-600 shadow flex items-center gap-1.5 text-xs sm:text-base">
+          <span class="text-base sm:text-xl">🏠</span>
+          <span class="font-bold">大廳</span>
+        </button>
+        <div id="home-badge" class="flex items-center gap-1 text-sky-800 font-extrabold text-xs sm:text-base">
+          <span class="text-lg sm:text-2xl">🎪</span>
+          <span class="hidden xs:inline sm:inline">發音樂園</span>
+        </div>
+      </div>
+
+      <!-- 中間：標題 -->
+      <h1 class="text-sm sm:text-xl md:text-2xl font-black text-sky-900 tracking-wide flex items-center gap-1 text-center truncate">
+        <span class="text-base sm:text-2xl">🚂</span>
+        <span>CVC 自然發音小火車</span>
+      </h1>
+
+      <!-- 右側：星星收集罐 & 家長設定 -->
+      <div class="flex items-center justify-end gap-1.5 sm:gap-2 min-w-[70px] sm:min-w-[130px]">
+        <div id="star-jar" class="bg-amber-100 border border-amber-400 rounded-xl sm:rounded-2xl px-2 sm:px-3 py-0.5 sm:py-1 flex items-center gap-1 shadow-inner">
+          <span class="text-base sm:text-xl">⭐</span>
+          <span id="star-count" class="font-phonics font-bold text-base sm:text-xl text-amber-800">0</span>
+        </div>
+        <button onclick="toggleSettingsModal(true)" class="btn-3d bg-sky-100 hover:bg-sky-200 text-sky-800 border-b-2 sm:border-b-4 border-sky-300 p-1.5 sm:px-2.5 sm:py-1 rounded-xl sm:rounded-2xl font-bold text-xs flex items-center">
+          <span class="text-sm sm:text-lg">⚙️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       主畫面區域 (Flex 彈性撐滿剩餘空間，高度嚴格鎖定)
+       ========================================================================= -->
+  <main class="flex-1 min-h-0 w-full max-w-6xl mx-auto px-2 sm:px-6 py-1 flex flex-col justify-center overflow-hidden z-20">
+
+    <!-- =====================================================================
+         PAGE 1: 首頁大廳 (自適應 4 宮格，在手機與平板均一頁呈現)
+         ===================================================================== -->
+    <section id="page-home" class="h-full flex flex-col justify-center py-1">
+      <div class="text-center mb-1.5 sm:mb-3 shrink-0">
+        <div class="inline-flex items-center gap-1.5 bg-white/90 border border-sky-300 rounded-full px-3 py-0.5 sm:py-1 shadow-sm">
+          <span class="text-sm sm:text-base">🌟</span>
+          <span class="font-bold text-sky-900 text-[11px] sm:text-xs md:text-sm">零自動發聲・手動點擊才發音・安心探索！</span>
+        </div>
+      </div>
+
+      <!-- 四宮格大卡片：手機 2x2 精準滿版，平板大器自適應 -->
+      <div class="grid grid-cols-2 gap-2 sm:gap-4 max-w-4xl mx-auto w-full my-auto">
+        
+        <!-- 卡片 1: 📇 發音單字卡 -->
+        <div onclick="switchPage('flashcard')" class="btn-3d cursor-pointer group bg-gradient-to-b from-white to-blue-50/80 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-blue-400 border-b-4 sm:border-b-8 p-2.5 sm:p-5 shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1 sm:mb-2">
+              <span class="bg-blue-600 text-white font-black px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
+                1. 認識單字
+              </span>
+              <span class="text-blue-800 font-bold text-[10px] sm:text-xs hidden sm:inline">
+                藍 - 綠 - 藍
+              </span>
+            </div>
+            <h3 class="text-sm sm:text-xl md:text-2xl font-black text-blue-950 flex items-center gap-1 mb-1">
+              <span>📇</span>
+              <span>單字卡</span>
+            </h3>
+            <p class="text-slate-600 text-[11px] sm:text-xs md:text-sm font-medium line-clamp-2 hidden sm:block">
+              藍綠藍跳色！點字母聽單音、點喇叭聽整詞，支援圖片遮蔽測驗。
+            </p>
+            <div class="bg-blue-100/70 rounded-xl p-1 sm:p-2.5 my-1 sm:my-2 flex items-center justify-center gap-2">
+              <span class="text-xl sm:text-3xl">🐱</span>
+              <div class="font-phonics font-bold text-sm sm:text-xl bg-white px-2 py-0.5 rounded-lg border border-blue-200">
+                <span class="text-blue-700">c</span><span class="text-emerald-600">a</span><span class="text-blue-700">t</span>
+              </div>
+            </div>
+          </div>
+          <button class="w-full bg-blue-600 group-hover:bg-blue-500 text-white font-black text-xs sm:text-base py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-blue-800 shadow">
+            翻單字卡 ▶
+          </button>
+        </div>
+
+        <!-- 卡片 2: 🚂 CVC 拼讀小火車 -->
+        <div onclick="switchPage('train')" class="btn-3d cursor-pointer group bg-gradient-to-b from-white to-sky-50/80 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-sky-400 border-b-4 sm:border-b-8 p-2.5 sm:p-5 shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1 sm:mb-2">
+              <span class="bg-sky-500 text-white font-black px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
+                2. 拆音拼讀
+              </span>
+              <span class="text-sky-800 font-bold text-[10px] sm:text-xs hidden sm:inline">
+                開神秘禮物
+              </span>
+            </div>
+            <h3 class="text-sm sm:text-xl md:text-2xl font-black text-sky-950 flex items-center gap-1 mb-1">
+              <span>🚂</span>
+              <span>拼讀火車</span>
+            </h3>
+            <p class="text-slate-600 text-[11px] sm:text-xs md:text-sm font-medium line-clamp-2 hidden sm:block">
+              三節車廂拆開聽音，點火車頭拼起來念，跳出驚喜神秘圖案！
+            </p>
+            <div class="bg-sky-100/70 rounded-xl p-1 sm:p-2.5 my-1 sm:my-2 flex items-center justify-center gap-1">
+              <span class="font-phonics font-bold text-xs sm:text-sm bg-sky-500 text-white px-1.5 py-0.5 rounded">b</span>
+              <span class="font-phonics font-bold text-xs sm:text-sm bg-rose-500 text-white px-1.5 py-0.5 rounded">e</span>
+              <span class="font-phonics font-bold text-xs sm:text-sm bg-sky-500 text-white px-1.5 py-0.5 rounded">d</span>
+              <span class="text-xs sm:text-base">➔</span>
+              <span class="text-xl sm:text-3xl">🛏️</span>
+            </div>
+          </div>
+          <button class="w-full bg-sky-500 group-hover:bg-sky-400 text-white font-black text-xs sm:text-base py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-sky-700 shadow">
+            開動火車 ▶
+          </button>
+        </div>
+
+        <!-- 卡片 3: 🎯 車廂聽音大挑戰 -->
+        <div onclick="switchPage('challenge')" class="btn-3d cursor-pointer group bg-gradient-to-b from-white to-amber-50/80 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-amber-400 border-b-4 sm:border-b-8 p-2.5 sm:p-5 shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1 sm:mb-2">
+              <span class="bg-amber-500 text-white font-black px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
+                3. 聽音填空
+              </span>
+              <span class="text-amber-800 font-bold text-[10px] sm:text-xs hidden sm:inline">
+                補齊車廂
+              </span>
+            </div>
+            <h3 class="text-sm sm:text-xl md:text-2xl font-black text-amber-950 flex items-center gap-1 mb-1">
+              <span>🎯</span>
+              <span>車廂挑戰</span>
+            </h3>
+            <p class="text-slate-600 text-[11px] sm:text-xs md:text-sm font-medium line-clamp-2 hidden sm:block">
+              車廂漏了一節！點喇叭聽音，挑出正確積木補齊車廂！
+            </p>
+            <div class="bg-amber-100/70 rounded-xl p-1 sm:p-2.5 my-1 sm:my-2 flex items-center justify-center gap-1">
+              <span class="font-phonics font-bold text-xs sm:text-sm bg-sky-500 text-white px-1.5 py-0.5 rounded">p</span>
+              <span class="font-phonics font-bold text-xs sm:text-sm bg-white text-rose-500 border border-dashed border-rose-400 px-1.5 py-0.5 rounded">?</span>
+              <span class="font-phonics font-bold text-xs sm:text-sm bg-sky-500 text-white px-1.5 py-0.5 rounded">g</span>
+              <span class="text-xl sm:text-3xl">🐷</span>
+            </div>
+          </div>
+          <button class="w-full bg-amber-500 group-hover:bg-amber-400 text-white font-black text-xs sm:text-base py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-amber-700 shadow">
+            開始挑戰 ▶
+          </button>
+        </div>
+
+        <!-- 卡片 4: 🧩 拼字積木大冒險 -->
+        <div onclick="switchPage('builder')" class="btn-3d cursor-pointer group bg-gradient-to-b from-white to-emerald-50/80 rounded-2xl sm:rounded-[2rem] border-2 sm:border-4 border-emerald-400 border-b-4 sm:border-b-8 p-2.5 sm:p-5 shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1 sm:mb-2">
+              <span class="bg-emerald-500 text-white font-black px-2 py-0.5 rounded-full text-[10px] sm:text-xs">
+                4. 動手拼字
+              </span>
+              <span class="text-emerald-800 font-bold text-[10px] sm:text-xs hidden sm:inline">
+                純色盲測+退回
+              </span>
+            </div>
+            <h3 class="text-sm sm:text-xl md:text-2xl font-black text-emerald-950 flex items-center gap-1 mb-1">
+              <span>🧩</span>
+              <span>積木拼字</span>
+            </h3>
+            <p class="text-slate-600 text-[11px] sm:text-xs md:text-sm font-medium line-clamp-2 hidden sm:block">
+              統一顏色盲測！3張/6張（強制混淆母音）難度切換，排錯點擊可退回！
+            </p>
+            <div class="bg-emerald-100/70 rounded-xl p-1 sm:p-2.5 my-1 sm:my-2 flex items-center justify-center gap-1.5">
+              <span class="text-xl sm:text-3xl">🖊️</span>
+              <div class="flex gap-1 font-phonics font-bold">
+                <span class="w-6 h-6 rounded bg-amber-100 border border-amber-400 flex items-center justify-center text-xs text-amber-950">p</span>
+                <span class="w-6 h-6 rounded bg-amber-100 border border-amber-400 flex items-center justify-center text-xs text-amber-950">e</span>
+                <span class="w-6 h-6 rounded bg-amber-100 border border-amber-400 flex items-center justify-center text-xs text-amber-950">n</span>
+              </div>
+            </div>
+          </div>
+          <button class="w-full bg-emerald-500 group-hover:bg-emerald-400 text-white font-black text-xs sm:text-base py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-emerald-700 shadow">
+            組裝積木 ▶
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================================
+         PAGE 2: 📇 發音單字卡 (藍-綠-藍 嚴格跳色、純手動播音)
+         ===================================================================== -->
+    <section id="page-flashcard" class="hidden h-full flex flex-col justify-between py-1">
+      
+      <!-- 頂部：母音分類標籤 -->
+      <div class="shrink-0 bg-white/90 backdrop-blur rounded-2xl p-1.5 border border-blue-200 shadow-sm flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar" id="fc-vowel-tabs">
+        <!-- JS 動態生成 -->
+      </div>
+
+      <!-- 進度與圖片遮蔽開關 -->
+      <div class="shrink-0 flex items-center justify-between px-2 my-1 max-w-lg mx-auto w-full">
+        <span id="fc-progress-badge" class="bg-blue-100 text-blue-900 font-bold px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs border border-blue-300">
+          第 1 / 25 個單字
+        </span>
+        <button id="fc-btn-toggle-img" onclick="toggleFlashcardImageVisibility()" class="btn-3d bg-white hover:bg-slate-50 text-slate-700 font-bold px-2.5 py-0.5 rounded-full border border-slate-300 text-[11px] sm:text-xs shadow-sm flex items-center gap-1">
+          <span id="fc-toggle-eye">👁️</span>
+          <span id="fc-toggle-text">隱藏圖片</span>
+        </button>
+      </div>
+
+      <!-- 主單字卡片：iPad / iPhone 皆能完整裝下 -->
+      <div class="flex-1 min-h-0 max-w-lg w-full mx-auto bg-white rounded-3xl border-2 sm:border-4 border-blue-400 border-b-4 sm:border-b-8 shadow-xl p-3 sm:p-5 flex flex-col items-center justify-between">
+        
+        <!-- 大圖案區 -->
+        <div id="fc-image-box" class="h-28 sm:h-36 w-28 sm:w-36 bg-blue-50/80 rounded-2xl border-2 border-blue-100 flex items-center justify-center text-6xl sm:text-7xl shadow-inner transition-all shrink-0">
+          <span id="fc-emoji" class="transform transition-transform hover:scale-110">🐱</span>
+        </div>
+
+        <div id="fc-image-hidden-box" class="hidden h-28 sm:h-36 w-28 sm:w-36 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex-col items-center justify-center text-slate-400 shrink-0 cursor-pointer" onclick="toggleFlashcardImageVisibility()">
+          <span class="text-3xl mb-1">🙈</span>
+          <span class="text-[10px] font-bold">點我看圖片</span>
+        </div>
+
+        <!-- 中文提示 -->
+        <div class="text-xs sm:text-sm font-bold bg-amber-100 text-amber-900 px-3 py-0.5 rounded-full border border-amber-300 shrink-0" id="fc-meaning">
+          小貓
+        </div>
+
+        <!-- 藍 - 綠 - 藍 核心單字顯示區 (點擊每個字母可發單音) -->
+        <div class="flex items-center justify-center gap-3 sm:gap-4 my-1 shrink-0">
+          <!-- C1 (藍) -->
+          <button onclick="handleFlashcardLetterClick('c1')" class="btn-3d flex flex-col items-center p-1 rounded-xl hover:bg-blue-50">
+            <span id="fc-letter-c1" class="font-phonics text-5xl sm:text-7xl font-black text-blue-700 leading-none">c</span>
+            <span class="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.2 rounded-full mt-1">子音</span>
+          </button>
+          <!-- V (綠) -->
+          <button onclick="handleFlashcardLetterClick('v')" class="btn-3d flex flex-col items-center p-1 rounded-xl hover:bg-emerald-50">
+            <span id="fc-letter-v" class="font-phonics text-5xl sm:text-7xl font-black text-emerald-600 leading-none">a</span>
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full mt-1">母音</span>
+          </button>
+          <!-- C2 (藍) -->
+          <button onclick="handleFlashcardLetterClick('c2')" class="btn-3d flex flex-col items-center p-1 rounded-xl hover:bg-blue-50">
+            <span id="fc-letter-c2" class="font-phonics text-5xl sm:text-7xl font-black text-blue-700 leading-none">t</span>
+            <span class="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.2 rounded-full mt-1">子音</span>
+          </button>
+        </div>
+
+        <!-- 點念完整單字按鈕 (手動點擊才播音) -->
+        <button onclick="speakFlashcardWord()" class="btn-3d w-full max-w-sm bg-emerald-500 hover:bg-emerald-400 text-white font-black text-base sm:text-lg py-2.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-emerald-700 shadow flex items-center justify-center gap-1.5 shrink-0">
+          <span class="text-xl">🔊</span>
+          <span>念單字發音</span>
+        </button>
+
+        <!-- 翻頁控制 (⬅️ 上一張 / 下一張 ➡️) -->
+        <div class="flex items-center justify-between w-full pt-1.5 border-t border-slate-100 shrink-0">
+          <button onclick="navigateFlashcard(-1)" class="btn-3d bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border-b-2 border-slate-300 text-xs sm:text-sm flex items-center gap-1">
+            <span>⬅️</span>
+            <span>上一張</span>
+          </button>
+          <span class="text-[11px] text-slate-400 font-medium hidden sm:inline">點字母聽單音・點喇叭聽整詞</span>
+          <button onclick="navigateFlashcard(1)" class="btn-3d bg-blue-500 hover:bg-blue-400 text-white font-bold px-3 py-1.5 rounded-xl border-b-2 border-blue-700 text-xs sm:text-sm flex items-center gap-1">
+            <span>下一張</span>
+            <span>➡️</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================================
+         PAGE 3: 🚂 CVC 拼讀小火車
+         ===================================================================== -->
+    <section id="page-train" class="hidden h-full flex flex-col justify-between py-1">
+      
+      <!-- 頂部短母音選擇 -->
+      <div class="shrink-0 bg-white/90 backdrop-blur rounded-2xl p-1.5 border border-sky-200 shadow-sm flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar" id="train-vowel-tabs">
+        <!-- JS 動態生成 -->
+      </div>
+
+      <!-- 進度指示 -->
+      <div class="shrink-0 flex items-center justify-between max-w-2xl mx-auto w-full px-2 my-0.5">
+        <div class="text-[11px] sm:text-xs font-bold text-sky-800 bg-white/80 px-2.5 py-0.5 rounded-full border border-sky-200">
+          <span>點車廂聽音 ➔ 點火車頭開禮物 🎁</span>
+        </div>
+        <div id="train-dots" class="flex items-center gap-1"></div>
+      </div>
+
+      <!-- 核心火車軌道容器 -->
+      <div class="flex-1 min-h-0 max-w-3xl w-full mx-auto bg-gradient-to-b from-sky-100/95 via-sky-50/95 to-emerald-100/95 rounded-3xl border-2 sm:border-4 border-sky-300 shadow-xl p-2.5 sm:p-5 flex flex-col justify-between">
+        
+        <!-- 提示小泡泡 -->
+        <div class="h-6 flex items-center justify-center shrink-0">
+          <div id="train-phoneme-bubble" class="opacity-0 transition-opacity bg-slate-800 text-white font-phonics font-bold text-xs sm:text-sm px-3 py-0.5 rounded-full shadow">
+            <span id="train-bubble-text">/k/</span>
+          </div>
+        </div>
+
+        <!-- 火車本體：在手機直立時車廂緊湊排開，平板大器延展 -->
+        <div class="flex items-end justify-center gap-1.5 sm:gap-3 my-auto py-1">
+          
+          <!-- C1 (藍) -->
+          <div class="flex flex-col items-center">
+            <div id="train-light-c1" class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-slate-300 border border-slate-400 mb-0.5"></div>
+            <button id="train-carriage-c1" onclick="handleTrainCarriageClick('c1')" class="btn-3d w-18 sm:w-24 h-24 sm:h-32 bg-gradient-to-b from-sky-400 to-sky-500 text-white rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-sky-700 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-between p-1.5">
+              <span class="text-[9px] sm:text-xs font-bold bg-sky-700/60 px-1.5 rounded-full">字首</span>
+              <span id="train-letter-c1" class="font-phonics text-4xl sm:text-6xl font-bold leading-none">c</span>
+              <span class="text-[9px] bg-white/20 px-1 rounded-full">🔈 聽音</span>
+            </button>
+            <div class="flex justify-between w-14 sm:w-18 px-1 -mt-1.5 z-10">
+              <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+              <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+            </div>
+          </div>
+
+          <!-- 連接桿 -->
+          <div class="h-2 w-2 sm:w-3 bg-slate-600 rounded-full mb-6"></div>
+
+          <!-- V (暖紅) -->
+          <div class="flex flex-col items-center">
+            <div id="train-light-v" class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-slate-300 border border-slate-400 mb-0.5"></div>
+            <button id="train-carriage-v" onclick="handleTrainCarriageClick('v')" class="btn-3d w-18 sm:w-24 h-24 sm:h-32 bg-gradient-to-b from-rose-400 to-rose-500 text-white rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-rose-700 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-between p-1.5">
+              <span class="text-[9px] sm:text-xs font-bold bg-rose-800/60 px-1.5 rounded-full">母音</span>
+              <span id="train-letter-v" class="font-phonics text-4xl sm:text-6xl font-bold leading-none">a</span>
+              <span class="text-[9px] bg-white/20 px-1 rounded-full">🔈 聽音</span>
+            </button>
+            <div class="flex justify-between w-14 sm:w-18 px-1 -mt-1.5 z-10">
+              <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+              <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+            </div>
+          </div>
+
+          <!-- 連接桿 -->
+          <div class="h-2 w-2 sm:w-3 bg-slate-600 rounded-full mb-6"></div>
+
+          <!-- C2 (藍) -->
+          <div class="flex flex-col items-center">
+            <div id="train-light-c2" class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-slate-300 border border-slate-400 mb-0.5"></div>
+            <button id="train-carriage-c2" onclick="handleTrainCarriageClick('c2')" class="btn-3d w-18 sm:w-24 h-24 sm:h-32 bg-gradient-to-b from-sky-400 to-sky-500 text-white rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-sky-700 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-between p-1.5">
+              <span class="text-[9px] sm:text-xs font-bold bg-sky-700/60 px-1.5 rounded-full">字尾</span>
+              <span id="train-letter-c2" class="font-phonics text-4xl sm:text-6xl font-bold leading-none">t</span>
+              <span class="text-[9px] bg-white/20 px-1 rounded-full">🔈 聽音</span>
+            </button>
+            <div class="flex justify-between w-14 sm:w-18 px-1 -mt-1.5 z-10">
+              <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+              <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+            </div>
+          </div>
+
+          <!-- 連接桿 -->
+          <div class="h-2 w-2 sm:w-3 bg-slate-600 rounded-full mb-6"></div>
+
+          <!-- 火車頭 (神秘禮物箱) -->
+          <div class="flex flex-col items-center">
+            <div onclick="blendTrainWord()" class="btn-3d cursor-pointer relative bg-gradient-to-b from-amber-300 to-amber-400 border-2 sm:border-4 border-amber-700 border-b-4 sm:border-b-8 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 w-24 sm:w-36 h-24 sm:h-32 shadow flex flex-col items-center justify-center">
+              
+              <!-- 煙囪 -->
+              <div class="absolute -top-5 right-3 flex flex-col items-center pointer-events-none">
+                <div class="steam-1 w-3 h-3 rounded-full bg-white/80 mb-0.5"></div>
+                <div class="w-4 h-4 bg-amber-800 rounded-t border border-amber-950"></div>
+              </div>
+
+              <!-- 關閉禮物 -->
+              <div id="train-box-closed" class="flex flex-col items-center">
+                <span class="text-3xl sm:text-5xl">🎁</span>
+                <span class="font-black text-amber-950 text-[10px] sm:text-xs mt-0.5">點我拼讀</span>
+              </div>
+
+              <!-- 打開禮物 -->
+              <div id="train-box-opened" class="hidden flex-col items-center">
+                <span id="train-box-emoji" class="text-3xl sm:text-5xl">🐱</span>
+                <span id="train-box-meaning" class="bg-amber-100 text-amber-900 font-bold text-[9px] sm:text-xs px-1 rounded border border-amber-300 mt-0.5">小貓</span>
+              </div>
+
+              <!-- 火車頭輪子 -->
+              <div class="flex justify-between w-20 sm:w-28 px-1 -mb-3 sm:-mb-4 mt-auto z-10">
+                <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-amber-500"></div>
+                <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-slate-800 border-2 border-amber-500"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 鐵軌 -->
+        <div class="w-full h-2.5 sm:h-3 bg-slate-500 border-y-2 border-slate-700 rounded-full relative overflow-hidden my-1 shrink-0">
+          <div class="railway-sleeper w-full h-full opacity-80"></div>
+        </div>
+
+        <!-- 控制列 -->
+        <div class="flex items-center justify-between gap-2 max-w-xl mx-auto w-full shrink-0">
+          <button onclick="navigateTrainWord(-1)" class="btn-3d bg-white hover:bg-slate-50 text-slate-700 font-bold px-3 py-2 rounded-xl border border-slate-300 border-b-2 text-xs sm:text-sm">
+            ⬅️ 上一列
+          </button>
+          <button onclick="blendTrainWord()" class="btn-3d flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black py-2.5 rounded-xl sm:rounded-2xl border-b-2 sm:border-b-4 border-emerald-700 shadow text-sm sm:text-lg flex items-center justify-center gap-1">
+            <span>🔊 拼起來念！</span>
+          </button>
+          <button onclick="navigateTrainWord(1)" class="btn-3d bg-sky-500 hover:bg-sky-400 text-white font-bold px-3 py-2 rounded-xl border-b-2 sm:border-b-4 border-sky-700 text-xs sm:text-sm">
+            下一列 ➡️
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================================
+         PAGE 4: 🎯 車廂聽音大挑戰
+         ===================================================================== -->
+    <section id="page-challenge" class="hidden h-full flex flex-col justify-between py-1">
+      
+      <!-- 篩選列 -->
+      <div class="shrink-0 bg-white/90 backdrop-blur rounded-2xl p-1.5 border border-amber-300 shadow-sm flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+        <div class="flex items-center gap-1 shrink-0">
+          <button onclick="setChallengeType('v')" id="ch-btn-v" class="ch-type-btn bg-rose-500 text-white font-bold px-2 py-1 rounded-xl text-[11px] sm:text-xs">
+            🔴 找母音 (c-?-t)
+          </button>
+          <button onclick="setChallengeType('c1')" id="ch-btn-c1" class="ch-type-btn bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-xl text-[11px] sm:text-xs">
+            🔵 找字首 (?-a-t)
+          </button>
+          <button onclick="setChallengeType('c2')" id="ch-btn-c2" class="ch-type-btn bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-xl text-[11px] sm:text-xs">
+            🟢 找字尾 (c-a-?)
+          </button>
+          <button onclick="setChallengeType('random')" id="ch-btn-random" class="ch-type-btn bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-xl text-[11px] sm:text-xs">
+            🌈 綜合題
+          </button>
+        </div>
+        <select id="ch-vowel-filter" onchange="handleChallengeVowelFilterChange()" class="bg-amber-50 border border-amber-300 text-amber-950 font-bold rounded-xl px-2 py-1 text-[11px] sm:text-xs shrink-0">
+          <option value="all">🌟 全部母音</option>
+          <option value="a">Short a</option>
+          <option value="e">Short e</option>
+          <option value="i">Short i</option>
+          <option value="o">Short o</option>
+          <option value="u">Short u</option>
+        </select>
+      </div>
+
+      <!-- 挑戰主卡片 -->
+      <div class="flex-1 min-h-0 max-w-2xl w-full mx-auto bg-gradient-to-b from-amber-50/95 via-white/95 to-emerald-100/95 rounded-3xl border-2 sm:border-4 border-amber-400 shadow-xl p-2.5 sm:p-5 flex flex-col justify-between">
+        
+        <!-- 聽音提示區 (手動點擊才發聲) -->
+        <div class="flex items-center justify-center gap-3 shrink-0">
+          <div onclick="speakChallengeTargetWord()" class="btn-3d cursor-pointer bg-white border-2 border-amber-400 rounded-2xl p-2 shadow-sm flex items-center gap-2">
+            <span class="text-4xl sm:text-5xl" id="ch-emoji">🐷</span>
+            <div>
+              <div class="text-[10px] sm:text-xs font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded-full inline-block" id="ch-meaning">
+                小豬
+              </div>
+              <div class="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black px-3 py-1 rounded-xl border-b-2 border-emerald-700 text-xs sm:text-sm mt-0.5">
+                <span>🔊</span>
+                <span>點我聽音</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 缺空車廂 -->
+        <div class="flex items-end justify-center gap-2 sm:gap-3 my-auto py-1">
+          <!-- C1 -->
+          <div class="flex flex-col items-center">
+            <button id="ch-slot-c1" onclick="handleChallengeSlotClick('c1')" class="btn-3d w-20 sm:w-26 h-22 sm:h-28 rounded-2xl border-2 sm:border-4 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-center p-1">
+              <span id="ch-text-c1" class="font-phonics text-4xl sm:text-6xl font-bold">p</span>
+            </button>
+            <div class="flex justify-between w-14 -mt-1.5 z-10">
+              <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+              <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+            </div>
+          </div>
+
+          <div class="h-2 w-2 sm:w-3 bg-slate-600 rounded-full mb-5"></div>
+
+          <!-- V -->
+          <div class="flex flex-col items-center">
+            <button id="ch-slot-v" onclick="handleChallengeSlotClick('v')" class="btn-3d w-20 sm:w-26 h-22 sm:h-28 rounded-2xl border-2 sm:border-4 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-center p-1">
+              <span id="ch-text-v" class="font-phonics text-4xl sm:text-6xl font-bold">?</span>
+            </button>
+            <div class="flex justify-between w-14 -mt-1.5 z-10">
+              <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+              <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+            </div>
+          </div>
+
+          <div class="h-2 w-2 sm:w-3 bg-slate-600 rounded-full mb-5"></div>
+
+          <!-- C2 -->
+          <div class="flex flex-col items-center">
+            <button id="ch-slot-c2" onclick="handleChallengeSlotClick('c2')" class="btn-3d w-20 sm:w-26 h-22 sm:h-28 rounded-2xl border-2 sm:border-4 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-center p-1">
+              <span id="ch-text-c2" class="font-phonics text-4xl sm:text-6xl font-bold">g</span>
+            </button>
+            <div class="flex justify-between w-14 -mt-1.5 z-10">
+              <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+              <div class="w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-400"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 候選選項區 -->
+        <div class="shrink-0 text-center">
+          <p id="ch-feedback-text" class="font-bold text-slate-700 text-xs sm:text-sm mb-1.5">
+            👇 點選正確的字母積木：
+          </p>
+          <div id="ch-options-container" class="flex flex-wrap items-center justify-center gap-2"></div>
+        </div>
+
+        <!-- 下一題按鈕 -->
+        <div class="shrink-0 flex items-center justify-center pt-1">
+          <button id="btn-ch-next" onclick="nextChallengeQuestion()" class="btn-3d bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-1.5 rounded-xl border-b-2 border-slate-400 shadow text-xs sm:text-base">
+            換下一題 ➡️
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =====================================================================
+         PAGE 5: 🧩 拼字積木大冒險 (純色盲測・6卡強制混淆母音・點擊格子退回)
+         ===================================================================== -->
+    <section id="page-builder" class="hidden h-full flex flex-col justify-between py-1">
+      
+      <!-- 頂部功能列：難度開關 (3張 vs 6張) -->
+      <div class="shrink-0 bg-white/90 backdrop-blur rounded-2xl p-1.5 border border-emerald-300 shadow-sm flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <span class="text-[11px] sm:text-xs font-black text-slate-500">模式：</span>
+          <button id="bd-diff-3" onclick="setBuilderDifficulty(3)" class="btn-3d bg-emerald-500 text-white font-bold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow-sm">
+            🟢 基礎 3 張
+          </button>
+          <button id="bd-diff-6" onclick="setBuilderDifficulty(6)" class="btn-3d bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs">
+            🟡 進階 6 張 (含混淆母音)
+          </button>
+        </div>
+        <select id="bd-vowel-filter" onchange="handleBuilderVowelFilterChange()" class="bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold rounded-xl px-2 py-1 text-[11px] sm:text-xs shrink-0">
+          <option value="all">🌟 全部母音</option>
+          <option value="a">Short a</option>
+          <option value="e">Short e</option>
+          <option value="i">Short i</option>
+          <option value="o">Short o</option>
+          <option value="u">Short u</option>
+        </select>
+      </div>
+
+      <!-- 拼字主卡片 (零捲動) -->
+      <div class="flex-1 min-h-0 max-w-xl w-full mx-auto bg-gradient-to-b from-emerald-50/95 via-white/95 to-sky-100/95 rounded-3xl border-2 sm:border-4 border-emerald-400 shadow-xl p-2.5 sm:p-5 flex flex-col justify-between">
+        
+        <!-- 題目圖案與大喇叭 (純手動點擊才發聲) -->
+        <div class="flex items-center justify-center gap-3 shrink-0">
+          <div onclick="speakBuilderTargetWord()" class="btn-3d cursor-pointer bg-white border-2 border-emerald-400 rounded-2xl p-2 shadow-sm flex items-center gap-2">
+            <span class="text-4xl sm:text-5xl" id="bd-emoji">🖊️</span>
+            <div>
+              <div class="text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full inline-block" id="bd-meaning">
+                原子筆
+              </div>
+              <div class="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black px-3 py-1 rounded-xl border-b-2 border-emerald-700 text-xs sm:text-sm mt-0.5">
+                <span>🔊</span>
+                <span>點我聽音</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 個中性目標空格 (中性淺灰虛線，拿掉母音顏色外掛) -->
+        <div class="shrink-0 text-center my-1">
+          <div id="bd-slots-container" class="flex items-center justify-center gap-2 sm:gap-4">
+            
+            <!-- 格子 1 (中性中灰虛線) -->
+            <button onclick="handleBuilderSlotClick(0)" class="btn-3d relative w-20 sm:w-26 h-22 sm:h-28 rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-dashed border-slate-300 bg-white/90 flex flex-col items-center justify-center shadow-inner">
+              <span class="absolute top-1 left-2 text-[9px] font-bold text-slate-400">1</span>
+              <span id="bd-slot-text-0" class="font-phonics text-4xl sm:text-6xl font-black text-slate-800 leading-none"></span>
+              <span id="bd-slot-hint-0" class="text-[9px] text-slate-400 mt-0.5">字首</span>
+            </button>
+
+            <!-- 格子 2 (同樣中性，不給母音顏色暗示，孩子必須靠耳朵聽！) -->
+            <button onclick="handleBuilderSlotClick(1)" class="btn-3d relative w-20 sm:w-26 h-22 sm:h-28 rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-dashed border-slate-300 bg-white/90 flex flex-col items-center justify-center shadow-inner">
+              <span class="absolute top-1 left-2 text-[9px] font-bold text-slate-400">2</span>
+              <span id="bd-slot-text-1" class="font-phonics text-4xl sm:text-6xl font-black text-slate-800 leading-none"></span>
+              <span id="bd-slot-hint-1" class="text-[9px] text-slate-400 mt-0.5">母音</span>
+            </button>
+
+            <!-- 格子 3 (中性中灰虛線) -->
+            <button onclick="handleBuilderSlotClick(2)" class="btn-3d relative w-20 sm:w-26 h-22 sm:h-28 rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-dashed border-slate-300 bg-white/90 flex flex-col items-center justify-center shadow-inner">
+              <span class="absolute top-1 left-2 text-[9px] font-bold text-slate-400">3</span>
+              <span id="bd-slot-text-2" class="font-phonics text-4xl sm:text-6xl font-black text-slate-800 leading-none"></span>
+              <span id="bd-slot-hint-2" class="text-[9px] text-slate-400 mt-0.5">字尾</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- 溫和狀態文字 -->
+        <p id="bd-feedback" class="text-center font-bold text-slate-600 text-xs sm:text-sm shrink-0 min-h-[18px]">
+          由左到右點選積木（排錯可點格子拿回）：
+        </p>
+
+        <!-- 散落字卡池：全部採用統一純色 (蜜糖暖木色)，徹底盲測！ -->
+        <!-- 6 張卡時自動排成超整齊 2x3 矩陣，在 iPhone 與 iPad 皆完美置中 -->
+        <div id="bd-cards-pool" class="shrink-0 p-1.5 sm:p-2 bg-emerald-100/50 rounded-2xl border border-emerald-200 min-h-[70px] flex items-center justify-center">
+          <!-- JS 動態生成 -->
+        </div>
+
+        <!-- 換下一題按鈕 -->
+        <div class="shrink-0 flex items-center justify-center pt-1">
+          <button id="btn-bd-next" onclick="nextBuilderQuestion()" class="btn-3d bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-6 py-1.5 rounded-xl border-b-2 sm:border-b-4 border-slate-400 shadow text-xs sm:text-base">
+            換下一題 ➡️
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 底部微型提示 (佔高極低，避免壓縮主畫面) -->
+  <footer class="shrink-0 text-center py-1 text-[10px] text-slate-400 font-medium">
+    <span>💡 點選字母或喇叭才播放聲音，無任何刺耳錯誤音</span>
+  </footer>
+
+
+  <!-- =========================================================================
+       家長設定彈窗 (Settings Modal)
+       ========================================================================= -->
+  <div id="settings-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-3">
+    <div class="bg-white rounded-3xl border-4 border-sky-400 max-w-sm w-full p-4 sm:p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-black text-sky-900 flex items-center gap-1.5">
+          <span>⚙️</span>
+          <span>發音與進度設定</span>
+        </h3>
+        <button onclick="toggleSettingsModal(false)" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 text-xs">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs sm:text-sm">
+        <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200">
+          <label class="font-bold text-sky-950 block mb-1">🐢 英語朗讀語速：</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button id="rate-slow" onclick="setSpeechRate(0.75)" class="py-1.5 rounded-lg font-bold border-2 border-sky-500 bg-sky-500 text-white text-xs">
+              慢速 (0.75x)
+            </button>
+            <button id="rate-normal" onclick="setSpeechRate(0.92)" class="py-1.5 rounded-lg font-bold border-2 border-sky-300 bg-white text-sky-800 text-xs">
+              正常 (0.92x)
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+          <span class="font-bold text-amber-950">🔊 試聽發音效果：</span>
+          <button onclick="speakWord('cat')" class="btn-3d bg-amber-400 text-amber-950 font-black px-3 py-1 rounded-lg border-b-2 border-amber-600 text-xs">
+            試聽 "cat"
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+          <span class="text-[11px] text-slate-500">重設星星紀錄：</span>
+          <button onclick="resetAllProgress()" class="text-xs font-bold text-rose-600 hover:underline">
+            🗑️ 清空星星
+          </button>
+        </div>
+      </div>
+
+      <button onclick="toggleSettingsModal(false)" class="mt-4 w-full btn-3d bg-sky-500 text-white font-black py-2 rounded-xl border-b-4 border-sky-700 text-sm">
+        完成返回
+      </button>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       JavaScript 核心模組
+       ========================================================================= -->
+  <script>
+    /* 1. 25 個經典 CVC 單字資料庫 (預留 sentence 句子重組欄位) */
+    const WORD_BANK = {
+      a: {
+        label: 'Short a',
+        ipa: '/æ/',
+        icon: '🐱',
+        words: [
+          { word: 'cat', c1: 'c', v: 'a', c2: 't', emoji: '🐱', meaningZh: '小貓', sentence: ['The', 'cat', 'is', 'cute.'] },
+          { word: 'bat', c1: 'b', v: 'a', c2: 't', emoji: '🦇', meaningZh: '蝙蝠', sentence: ['The', 'bat', 'can', 'fly.'] },
+          { word: 'fan', c1: 'f', v: 'a', c2: 'n', emoji: '🪭', meaningZh: '電扇', sentence: ['The', 'fan', 'is', 'cool.'] },
+          { word: 'map', c1: 'm', v: 'a', c2: 'p', emoji: '🗺️', meaningZh: '地圖', sentence: ['Look', 'at', 'the', 'map.'] },
+          { word: 'pan', c1: 'p', v: 'a', c2: 'n', emoji: '🍳', meaningZh: '平底鍋', sentence: ['An', 'egg', 'is', 'in', 'the', 'pan.'] }
+        ]
+      },
+      e: {
+        label: 'Short e',
+        ipa: '/ɛ/',
+        icon: '🛏️',
+        words: [
+          { word: 'bed', c1: 'b', v: 'e', c2: 'd', emoji: '🛏️', meaningZh: '床鋪', sentence: ['I', 'sleep', 'in', 'bed.'] },
+          { word: 'red', c1: 'r', v: 'e', c2: 'd', emoji: '🔴', meaningZh: '紅色', sentence: ['The', 'ball', 'is', 'red.'] },
+          { word: 'hen', c1: 'h', v: 'e', c2: 'n', emoji: '🐔', meaningZh: '母雞', sentence: ['The', 'hen', 'lays', 'eggs.'] },
+          { word: 'pen', c1: 'p', v: 'e', c2: 'n', emoji: '🖊️', meaningZh: '原子筆', sentence: ['This', 'is', 'my', 'pen.'] },
+          { word: 'net', c1: 'n', v: 'e', c2: 't', emoji: '🥅', meaningZh: '網子', sentence: ['A', 'fish', 'is', 'in', 'the', 'net.'] }
+        ]
+      },
+      i: {
+        label: 'Short i',
+        ipa: '/ɪ/',
+        icon: '🐷',
+        words: [
+          { word: 'pig', c1: 'p', v: 'i', c2: 'g', emoji: '🐷', meaningZh: '小豬', sentence: ['The', 'pig', 'is', 'pink.'] },
+          { word: 'pin', c1: 'p', v: 'i', c2: 'n', emoji: '📌', meaningZh: '大頭針', sentence: ['Here', 'is', 'a', 'sharp', 'pin.'] },
+          { word: 'sit', c1: 's', v: 'i', c2: 't', emoji: '🪑', meaningZh: '坐下', sentence: ['Please', 'sit', 'down.'] },
+          { word: 'big', c1: 'b', v: 'i', c2: 'g', emoji: '🐘', meaningZh: '巨大的', sentence: ['The', 'elephant', 'is', 'big.'] },
+          { word: 'wig', c1: 'w', v: 'i', c2: 'g', emoji: '💇', meaningZh: '假髮', sentence: ['He', 'wears', 'a', 'funny', 'wig.'] }
+        ]
+      },
+      o: {
+        label: 'Short o',
+        ipa: '/ɑ/',
+        icon: '🐶',
+        words: [
+          { word: 'dog', c1: 'd', v: 'o', c2: 'g', emoji: '🐶', meaningZh: '小狗', sentence: ['The', 'dog', 'is', 'running.'] },
+          { word: 'fox', c1: 'f', v: 'o', c2: 'x', emoji: '🦊', meaningZh: '狐狸', sentence: ['A', 'fox', 'is', 'clever.'] },
+          { word: 'box', c1: 'b', v: 'o', c2: 'x', emoji: '📦', meaningZh: '箱子', sentence: ['Open', 'the', 'big', 'box.'] },
+          { word: 'pot', c1: 'p', v: 'o', c2: 't', emoji: '🍲', meaningZh: '鍋子', sentence: ['Soup', 'is', 'in', 'the', 'pot.'] },
+          { word: 'hot', c1: 'h', v: 'o', c2: 't', emoji: '🔥', meaningZh: '熱的', sentence: ['The', 'tea', 'is', 'hot.'] }
+        ]
+      },
+      u: {
+        label: 'Short u',
+        ipa: '/ʌ/',
+        icon: '☀️',
+        words: [
+          { word: 'sun', c1: 's', v: 'u', c2: 'n', emoji: '☀️', meaningZh: '太陽', sentence: ['The', 'sun', 'is', 'shining.'] },
+          { word: 'bus', c1: 'b', v: 'u', c2: 's', emoji: '🚌', meaningZh: '公車', sentence: ['Take', 'the', 'school', 'bus.'] },
+          { word: 'cup', c1: 'c', v: 'u', c2: 'p', emoji: '☕', meaningZh: '茶杯', sentence: ['Drink', 'from', 'a', 'cup.'] },
+          { word: 'bug', c1: 'b', v: 'u', c2: 'g', emoji: '🐛', meaningZh: '小蟲', sentence: ['A', 'bug', 'is', 'on', 'the', 'leaf.'] },
+          { word: 'nut', c1: 'n', v: 'u', c2: 't', emoji: '🥜', meaningZh: '堅果', sentence: ['Squirrels', 'eat', 'the', 'nut.'] }
+        ]
+      }
+    };
+
+    const ALL_WORDS_FLAT = [];
+    Object.keys(WORD_BANK).forEach(k => ALL_WORDS_FLAT.push(...WORD_BANK[k].words));
+
+    /* 2. 自然發音音素映射 */
+    const PHONEME_MAP = {
+      a: { ipa: '/æ/', tts: 'ah',  pitch: 1.05, rate: 0.8 },
+      e: { ipa: '/ɛ/', tts: 'eh',  pitch: 1.05, rate: 0.8 },
+      i: { ipa: '/ɪ/', tts: 'ih',  pitch: 1.08, rate: 0.8 },
+      o: { ipa: '/ɑ/', tts: 'ah',  pitch: 1.0,  rate: 0.8 },
+      u: { ipa: '/ʌ/', tts: 'uh',  pitch: 1.0,  rate: 0.8 },
+      b: { ipa: '/b/', tts: 'buh', pitch: 1.0,  rate: 1.0 },
+      c: { ipa: '/k/', tts: 'kuh', pitch: 1.05, rate: 1.0 },
+      d: { ipa: '/d/', tts: 'duh', pitch: 1.0,  rate: 1.0 },
+      f: { ipa: '/f/', tts: 'fff', pitch: 1.05, rate: 0.9 },
+      g: { ipa: '/g/', tts: 'guh', pitch: 0.98, rate: 1.0 },
+      h: { ipa: '/h/', tts: 'huh', pitch: 1.05, rate: 1.0 },
+      m: { ipa: '/m/', tts: 'mmm', pitch: 1.0,  rate: 0.9 },
+      n: { ipa: '/n/', tts: 'nnn', pitch: 1.0,  rate: 0.9 },
+      p: { ipa: '/p/', tts: 'puh', pitch: 1.08, rate: 1.0 },
+      r: { ipa: '/r/', tts: 'rrr', pitch: 1.0,  rate: 0.9 },
+      s: { ipa: '/s/', tts: 'sss', pitch: 1.1,  rate: 0.9 },
+      t: { ipa: '/t/', tts: 'tuh', pitch: 1.1,  rate: 1.05 },
+      w: { ipa: '/w/', tts: 'wuh', pitch: 1.0,  rate: 1.0 },
+      x: { ipa: '/ks/', tts: 'ks', pitch: 1.1,  rate: 1.0 }
+    };
+
+    /* 3. 全域狀態管理 */
+    const state = {
+      currentPage: 'home',
+      stars: 0,
+      speechRate: 0.75,
+
+      flashcard: {
+        vowel: 'all',
+        currentIndex: 0,
+        imageVisible: true,
+        wordList: ALL_WORDS_FLAT.slice()
+      },
+
+      train: {
+        vowel: 'a',
+        currentIndex: 0,
+        boxOpened: false,
+        blendTimers: []
+      },
+
+      challenge: {
+        type: 'v',
+        vowelFilter: 'all',
+        currentWord: null,
+        missingSlot: 'v',
+        options: [],
+        answered: false
+      },
+
+      builder: {
+        difficulty: 3, // 3 或 6
+        vowelFilter: 'all',
+        currentWord: null,
+        slots: [null, null, null], // 3 個格子裝的卡片 { id, letter }
+        candidateCards: [],        // 散落卡片清單
+        answered: false
+      }
+    };
+
+    function loadSavedStars() {
+      try {
+        const saved = localStorage.getItem('cvc_train_stars');
+        if (saved !== null) state.stars = parseInt(saved, 10) || 0;
+        updateStarUI(false);
+      } catch (e) {}
+    }
+
+    function addStars(amount = 1) {
+      state.stars += amount;
+      try {
+        localStorage.setItem('cvc_train_stars', String(state.stars));
+      } catch (e) {}
+      updateStarUI(true);
+    }
+
+    function updateStarUI(animate = false) {
+      const el = document.getElementById('star-count');
+      const jar = document.getElementById('star-jar');
+      if (el) el.textContent = state.stars;
+      if (animate && jar) {
+        jar.classList.remove('animate-star-pulse');
+        void jar.offsetWidth;
+        jar.classList.add('animate-star-pulse');
+      }
+    }
+
+    function resetAllProgress() {
+      state.stars = 0;
+      try {
+        localStorage.removeItem('cvc_train_stars');
+      } catch (e) {}
+      updateStarUI(false);
+      toggleSettingsModal(false);
+    }
+
+    /* 4. 音訊系統 (落實手動點擊才發聲，換題進場完全安靜) */
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audioCtx = new AudioClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function stopAllAudio() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (state.train.blendTimers) {
+        state.train.blendTimers.forEach(t => clearTimeout(t));
+        state.train.blendTimers = [];
+      }
+    }
+
+    function getEnVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+      const names = ['Samantha', 'Google US English', 'Microsoft Aria', 'Microsoft Jenny', 'Alex'];
+      for (const n of names) {
+        const match = voices.find(v => v.name.includes(n) && v.lang.startsWith('en'));
+        if (match) return match;
+      }
+      return voices.find(v => v.lang === 'en-US' || v.lang === 'en_US') || voices.find(v => v.lang.startsWith('en')) || null;
+    }
+
+    function speakPhoneme(letter) {
+      stopAllAudio();
+      playPopSound(520);
+      if (!('speechSynthesis' in window)) return;
+
+      const info = PHONEME_MAP[letter.toLowerCase()] || { tts: letter, pitch: 1.0, rate: 0.8 };
+      const utter = new SpeechSynthesisUtterance(info.tts);
+      const voice = getEnVoice();
+      if (voice) utter.voice = voice;
+      utter.lang = 'en-US';
+      utter.rate = state.speechRate;
+      utter.pitch = info.pitch;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function speakWord(word, customRate = null) {
+      stopAllAudio();
+      if (!('speechSynthesis' in window)) return;
+
+      const utter = new SpeechSynthesisUtterance(word);
+      const voice = getEnVoice();
+      if (voice) utter.voice = voice;
+      utter.lang = 'en-US';
+      utter.rate = customRate || state.speechRate;
+      utter.pitch = 1.05;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function playPopSound(freq = 460) {
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.3, ctx.currentTime + 0.07);
+
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      } catch (e) {}
+    }
+
+    function playSuccessChime() {
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const t = ctx.currentTime + i * 0.07;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.16, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.23);
+        });
+      } catch (e) {}
+    }
+
+    function playGentleWoodTap() {
+      try {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.14, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.11);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.11);
+      } catch (e) {}
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 45, spread: 55, origin: { y: 0.62 } });
+      }
+    }
+
+    /* 5. 頁面切換路由器 */
+    const ALL_PAGES = ['home', 'flashcard', 'train', 'challenge', 'builder'];
+
+    function switchPage(pageId) {
+      stopAllAudio();
+
+      ALL_PAGES.forEach(id => {
+        const el = document.getElementById(`page-${id}`);
+        if (el) {
+          if (id === pageId) el.classList.remove('hidden');
+          else el.classList.add('hidden');
+        }
+      });
+
+      const btnHome = document.getElementById('btn-home');
+      const badge = document.getElementById('home-badge');
+      if (pageId === 'home') {
+        btnHome.classList.add('hidden');
+        badge.classList.remove('hidden');
+      } else {
+        btnHome.classList.remove('hidden');
+        badge.classList.add('hidden');
+      }
+
+      state.currentPage = pageId;
+
+      if (pageId === 'flashcard') initFlashcardPage();
+      else if (pageId === 'train') initTrainPage();
+      else if (pageId === 'challenge') initChallengePage();
+      else if (pageId === 'builder') initBuilderPage();
+    }
+
+    /* 6. 關卡 1：📇 發音單字卡 (藍綠藍嚴格跳色) */
+    function initFlashcardPage() {
+      renderFlashcardTabs();
+      updateFlashcardWordList();
+      renderFlashcard();
+    }
+
+    function renderFlashcardTabs() {
+      const container = document.getElementById('fc-vowel-tabs');
+      if (!container) return;
+      const options = [
+        { key: 'all', label: '全部', icon: '🌟' },
+        { key: 'a', label: 'Short a', icon: '🐱' },
+        { key: 'e', label: 'Short e', icon: '🛏️' },
+        { key: 'i', label: 'Short i', icon: '🐷' },
+        { key: 'o', label: 'Short o', icon: '🐶' },
+        { key: 'u', label: 'Short u', icon: '☀️' }
+      ];
+
+      container.innerHTML = options.map(opt => {
+        const isActive = state.flashcard.vowel === opt.key;
+        const cls = isActive
+          ? 'bg-blue-600 text-white border-blue-800 scale-105 shadow-sm'
+          : 'bg-blue-50 text-slate-700 border-blue-200';
+        return `
+          <button onclick="setFlashcardVowel('${opt.key}')" class="btn-3d ${cls} font-bold px-2.5 py-1 rounded-xl border border-b-2 text-[11px] sm:text-xs flex items-center gap-1 shrink-0">
+            <span>${opt.icon}</span>
+            <span>${opt.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setFlashcardVowel(key) {
+      stopAllAudio();
+      state.flashcard.vowel = key;
+      state.flashcard.currentIndex = 0;
+      renderFlashcardTabs();
+      updateFlashcardWordList();
+      renderFlashcard();
+    }
+
+    function updateFlashcardWordList() {
+      if (state.flashcard.vowel === 'all') {
+        state.flashcard.wordList = ALL_WORDS_FLAT.slice();
+      } else {
+        state.flashcard.wordList = WORD_BANK[state.flashcard.vowel].words.slice();
+      }
+    }
+
+    function renderFlashcard() {
+      const list = state.flashcard.wordList;
+      if (!list || list.length === 0) return;
+      const item = list[state.flashcard.currentIndex];
+
+      // 嚴格落實 藍 - 綠 - 藍 跳色
+      document.getElementById('fc-letter-c1').textContent = item.c1;
+      document.getElementById('fc-letter-v').textContent = item.v;
+      document.getElementById('fc-letter-c2').textContent = item.c2;
+
+      document.getElementById('fc-emoji').textContent = item.emoji;
+      document.getElementById('fc-meaning').textContent = item.meaningZh;
+
+      const progress = document.getElementById('fc-progress-badge');
+      if (progress) progress.textContent = `第 ${state.flashcard.currentIndex + 1} / ${list.length} 個單字`;
+
+      applyFlashcardImageVisibility();
+    }
+
+    function toggleFlashcardImageVisibility() {
+      state.flashcard.imageVisible = !state.flashcard.imageVisible;
+      applyFlashcardImageVisibility();
+    }
+
+    function applyFlashcardImageVisibility() {
+      const imgBox = document.getElementById('fc-image-box');
+      const hiddenBox = document.getElementById('fc-image-hidden-box');
+      const eyeIcon = document.getElementById('fc-toggle-eye');
+      const eyeText = document.getElementById('fc-toggle-text');
+
+      if (state.flashcard.imageVisible) {
+        imgBox.classList.remove('hidden');
+        imgBox.classList.add('flex');
+        hiddenBox.classList.add('hidden');
+        eyeIcon.textContent = '👁️';
+        eyeText.textContent = '隱藏圖片';
+      } else {
+        imgBox.classList.add('hidden');
+        imgBox.classList.remove('flex');
+        hiddenBox.classList.remove('hidden');
+        hiddenBox.classList.add('flex');
+        eyeIcon.textContent = '🙈';
+        eyeText.textContent = '顯示圖片';
+      }
+    }
+
+    function handleFlashcardLetterClick(slot) {
+      const item = state.flashcard.wordList[state.flashcard.currentIndex];
+      speakPhoneme(item[slot]);
+    }
+
+    function speakFlashcardWord() {
+      const item = state.flashcard.wordList[state.flashcard.currentIndex];
+      speakWord(item.word);
+    }
+
+    function navigateFlashcard(dir) {
+      stopAllAudio();
+      const list = state.flashcard.wordList;
+      state.flashcard.currentIndex = (state.flashcard.currentIndex + dir + list.length) % list.length;
+      renderFlashcard();
+    }
+
+    /* 7. 關卡 2：🚂 CVC 拼讀小火車 */
+    function initTrainPage() {
+      renderTrainTabs();
+      renderTrainScene();
+    }
+
+    function renderTrainTabs() {
+      const container = document.getElementById('train-vowel-tabs');
+      if (!container) return;
+      const vowels = ['a', 'e', 'i', 'o', 'u'];
+      container.innerHTML = vowels.map(v => {
+        const info = WORD_BANK[v];
+        const isActive = state.train.vowel === v;
+        const cls = isActive
+          ? 'bg-rose-500 text-white border-rose-700 scale-105 shadow-sm'
+          : 'bg-sky-50 text-slate-700 border-sky-300';
+        return `
+          <button onclick="setTrainVowel('${v}')" class="btn-3d ${cls} font-phonics font-bold px-2.5 py-1 rounded-xl border border-b-2 flex items-center gap-1 text-[11px] sm:text-xs shrink-0">
+            <span>${info.icon}</span>
+            <span>${info.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setTrainVowel(v) {
+      stopAllAudio();
+      state.train.vowel = v;
+      state.train.currentIndex = 0;
+      renderTrainTabs();
+      renderTrainScene();
+    }
+
+    function navigateTrainWord(dir) {
+      stopAllAudio();
+      const words = WORD_BANK[state.train.vowel].words;
+      state.train.currentIndex = (state.train.currentIndex + dir + words.length) % words.length;
+      renderTrainScene();
+    }
+
+    function renderTrainScene() {
+      const words = WORD_BANK[state.train.vowel].words;
+      const item = words[state.train.currentIndex];
+      state.train.boxOpened = false;
+
+      document.getElementById('train-letter-c1').textContent = item.c1;
+      document.getElementById('train-letter-v').textContent = item.v;
+      document.getElementById('train-letter-c2').textContent = item.c2;
+
+      ['c1', 'v', 'c2'].forEach(s => {
+        const light = document.getElementById(`train-light-${s}`);
+        if (light) light.className = 'w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-slate-300 border border-slate-400 mb-0.5';
+      });
+
+      const closedBox = document.getElementById('train-box-closed');
+      const openedBox = document.getElementById('train-box-opened');
+      closedBox.classList.remove('hidden');
+      closedBox.classList.add('flex');
+      openedBox.classList.add('hidden');
+      openedBox.classList.remove('flex', 'animate-pop-in');
+
+      document.getElementById('train-box-emoji').textContent = item.emoji;
+      document.getElementById('train-box-meaning').textContent = item.meaningZh;
+
+      const bubble = document.getElementById('train-phoneme-bubble');
+      if (bubble) bubble.classList.add('opacity-0');
+
+      const dots = document.getElementById('train-dots');
+      dots.innerHTML = words.map((w, i) => {
+        const isCur = i === state.train.currentIndex;
+        const cls = isCur ? 'bg-sky-500 text-white border-sky-700' : 'bg-white text-slate-400 border-slate-200';
+        return `
+          <button onclick="jumpTrainWord(${i})" class="font-phonics font-bold text-[10px] px-1.5 py-0.2 rounded-full border ${cls}">
+            ${w.word}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function jumpTrainWord(idx) {
+      stopAllAudio();
+      state.train.currentIndex = idx;
+      renderTrainScene();
+    }
+
+    function handleTrainCarriageClick(slot) {
+      const item = WORD_BANK[state.train.vowel].words[state.train.currentIndex];
+      const letter = item[slot];
+
+      const btn = document.getElementById(`train-carriage-${slot}`);
+      if (btn) {
+        btn.classList.remove('animate-carriage-bounce');
+        void btn.offsetWidth;
+        btn.classList.add('animate-carriage-bounce');
+      }
+
+      const light = document.getElementById(`train-light-${slot}`);
+      if (light) light.className = 'w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-400 border border-emerald-600 mb-0.5 shadow-[0_0_6px_#34d399]';
+
+      const bubble = document.getElementById('train-phoneme-bubble');
+      const text = document.getElementById('train-bubble-text');
+      if (bubble && text) {
+        text.textContent = `${letter} 發音 ${(PHONEME_MAP[letter] || {}).ipa || ''}`;
+        bubble.classList.remove('opacity-0');
+      }
+
+      speakPhoneme(letter);
+    }
+
+    function blendTrainWord() {
+      stopAllAudio();
+      const item = WORD_BANK[state.train.vowel].words[state.train.currentIndex];
+      const slots = ['c1', 'v', 'c2'];
+
+      slots.forEach((s, idx) => {
+        const t = setTimeout(() => {
+          const btn = document.getElementById(`train-carriage-${s}`);
+          if (btn) {
+            btn.classList.remove('animate-carriage-bounce');
+            void btn.offsetWidth;
+            btn.classList.add('animate-carriage-bounce');
+          }
+          const light = document.getElementById(`train-light-${s}`);
+          if (light) light.className = 'w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-400 border border-emerald-600 mb-0.5 shadow-[0_0_6px_#34d399]';
+          playPopSound(440 + idx * 75);
+        }, idx * 160);
+        state.train.blendTimers.push(t);
+      });
+
+      const revealTimer = setTimeout(() => {
+        const closedBox = document.getElementById('train-box-closed');
+        const openedBox = document.getElementById('train-box-opened');
+        closedBox.classList.add('hidden');
+        closedBox.classList.remove('flex');
+        openedBox.classList.remove('hidden');
+        openedBox.classList.add('flex', 'animate-pop-in');
+
+        const bubble = document.getElementById('train-phoneme-bubble');
+        const text = document.getElementById('train-bubble-text');
+        if (bubble && text) {
+          text.textContent = `${item.c1} - ${item.v} - ${item.c2} ➔ ${item.word}!`;
+          bubble.classList.remove('opacity-0');
+        }
+
+        speakWord(item.word);
+
+        if (!state.train.boxOpened) {
+          state.train.boxOpened = true;
+          playSuccessChime();
+          triggerConfetti();
+          addStars(1);
+        }
+      }, 500);
+      state.train.blendTimers.push(revealTimer);
+    }
+
+    /* 8. 關卡 3：🎯 車廂聽音大挑戰 */
+    function initChallengePage() {
+      updateChallengeTypeUI();
+      generateChallengeQuestion();
+    }
+
+    function setChallengeType(type) {
+      stopAllAudio();
+      state.challenge.type = type;
+      updateChallengeTypeUI();
+      generateChallengeQuestion();
+    }
+
+    function updateChallengeTypeUI() {
+      const types = ['v', 'c1', 'c2', 'random'];
+      types.forEach(t => {
+        const btn = document.getElementById(`ch-btn-${t}`);
+        if (!btn) return;
+        if (state.challenge.type === t) {
+          btn.className = 'ch-type-btn bg-amber-500 text-white font-bold px-2 py-1 rounded-xl text-[11px] sm:text-xs shadow-sm scale-105';
+        } else {
+          btn.className = 'ch-type-btn bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-xl text-[11px] sm:text-xs';
+        }
+      });
+    }
+
+    function handleChallengeVowelFilterChange() {
+      stopAllAudio();
+      const select = document.getElementById('ch-vowel-filter');
+      state.challenge.vowelFilter = select ? select.value : 'all';
+      generateChallengeQuestion();
+    }
+
+    function generateChallengeQuestion() {
+      stopAllAudio();
+      state.challenge.answered = false;
+
+      let pool = state.challenge.vowelFilter === 'all'
+        ? ALL_WORDS_FLAT.slice()
+        : WORD_BANK[state.challenge.vowelFilter].words.slice();
+
+      if (pool.length > 1 && state.challenge.currentWord) {
+        pool = pool.filter(w => w.word !== state.challenge.currentWord.word);
+      }
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      state.challenge.currentWord = chosen;
+
+      if (state.challenge.type === 'random') {
+        const slots = ['c1', 'v', 'c2'];
+        state.challenge.missingSlot = slots[Math.floor(Math.random() * slots.length)];
+      } else {
+        state.challenge.missingSlot = state.challenge.type;
+      }
+
+      const correct = chosen[state.challenge.missingSlot];
+      if (state.challenge.missingSlot === 'v') {
+        state.challenge.options = ['a', 'e', 'i', 'o', 'u'];
+      } else {
+        const consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'm', 'n', 'p', 'r', 's', 't', 'w', 'x'];
+        const distractors = consonants.filter(c => c !== correct).sort(() => Math.random() - 0.5).slice(0, 3);
+        state.challenge.options = [correct, ...distractors].sort(() => Math.random() - 0.5);
+      }
+
+      renderChallengeScene();
+    }
+
+    function renderChallengeScene() {
+      const item = state.challenge.currentWord;
+      const missing = state.challenge.missingSlot;
+
+      document.getElementById('ch-emoji').textContent = item.emoji;
+      document.getElementById('ch-meaning').textContent = item.meaningZh;
+
+      const slots = ['c1', 'v', 'c2'];
+      slots.forEach(slot => {
+        const btn = document.getElementById(`ch-slot-${slot}`);
+        const txt = document.getElementById(`ch-text-${slot}`);
+        const isVowel = slot === 'v';
+
+        if (slot === missing) {
+          txt.textContent = '?';
+          btn.className = 'btn-3d w-20 sm:w-26 h-22 sm:h-28 bg-white text-rose-500 rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-dashed border-rose-400 shadow-inner flex flex-col items-center justify-center p-1 animate-pulse';
+        } else {
+          txt.textContent = item[slot];
+          const colorCls = isVowel
+            ? 'bg-gradient-to-b from-rose-400 to-rose-500 text-white border-rose-700'
+            : 'bg-gradient-to-b from-sky-400 to-sky-500 text-white border-sky-700';
+          btn.className = `btn-3d w-20 sm:w-26 h-22 sm:h-28 ${colorCls} rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-center p-1`;
+        }
+      });
+
+      const feedback = document.getElementById('ch-feedback-text');
+      feedback.textContent = '👇 點選正確的字母積木：';
+      feedback.className = 'font-bold text-slate-700 text-xs sm:text-sm mb-1.5';
+
+      const optContainer = document.getElementById('ch-options-container');
+      const isVowelOpt = missing === 'v';
+      optContainer.innerHTML = state.challenge.options.map(letter => {
+        const bg = isVowelOpt ? 'bg-rose-500 hover:bg-rose-400 border-rose-700' : 'bg-sky-500 hover:bg-sky-400 border-sky-700';
+        return `
+          <button id="ch-opt-${letter}" onclick="handleChallengeOptionClick('${letter}')" class="btn-3d ${bg} text-white w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-b-4 shadow flex items-center justify-center font-phonics text-2xl sm:text-3xl font-bold">
+            ${letter}
+          </button>
+        `;
+      }).join('');
+
+      const nextBtn = document.getElementById('btn-ch-next');
+      if (nextBtn) nextBtn.className = 'btn-3d bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-1.5 rounded-xl border-b-2 border-slate-400 shadow text-xs sm:text-base';
+    }
+
+    function speakChallengeTargetWord() {
+      if (state.challenge.currentWord) speakWord(state.challenge.currentWord.word);
+    }
+
+    function handleChallengeSlotClick(slot) {
+      const item = state.challenge.currentWord;
+      if (!item) return;
+      if (slot === state.challenge.missingSlot && !state.challenge.answered) {
+        speakWord(item.word);
+      } else {
+        speakPhoneme(item[slot]);
+      }
+    }
+
+    function handleChallengeOptionClick(letter) {
+      if (state.challenge.answered) {
+        speakPhoneme(letter);
+        return;
+      }
+
+      const item = state.challenge.currentWord;
+      const missing = state.challenge.missingSlot;
+      const optBtn = document.getElementById(`ch-opt-${letter}`);
+      const feedback = document.getElementById('ch-feedback-text');
+
+      if (letter === item[missing]) {
+        state.challenge.answered = true;
+        const slotBtn = document.getElementById(`ch-slot-${missing}`);
+        const slotTxt = document.getElementById(`ch-text-${missing}`);
+        slotTxt.textContent = letter;
+        slotBtn.className = 'btn-3d w-20 sm:w-26 h-22 sm:h-28 bg-emerald-500 text-white rounded-2xl sm:rounded-3xl border-2 sm:border-4 border-emerald-700 border-b-4 sm:border-b-8 shadow flex flex-col items-center justify-center p-1 animate-pop-in';
+
+        feedback.textContent = `🎉 太棒了！ ${item.word}（${item.meaningZh}）拼裝成功！`;
+        feedback.className = 'font-bold text-emerald-700 text-xs sm:text-base mb-1.5';
+
+        playSuccessChime();
+        setTimeout(() => speakWord(item.word), 280);
+        triggerConfetti();
+        addStars(1);
+
+        const nextBtn = document.getElementById('btn-ch-next');
+        if (nextBtn) nextBtn.className = 'btn-3d bg-emerald-500 hover:bg-emerald-400 text-white font-black px-6 py-2 rounded-xl border-b-4 border-emerald-700 shadow text-sm sm:text-lg animate-bounce';
+      } else {
+        playGentleWoodTap();
+        if (optBtn) {
+          optBtn.classList.remove('animate-wobble');
+          void optBtn.offsetWidth;
+          optBtn.classList.add('animate-wobble', 'opacity-50');
+        }
+        feedback.textContent = `💭 這是 "${letter}" 的聲音，再點喇叭聽一次喔！`;
+        feedback.className = 'font-bold text-amber-800 text-xs sm:text-sm mb-1.5';
+      }
+    }
+
+    function nextChallengeQuestion() {
+      generateChallengeQuestion();
+    }
+
+    /* 9. 關卡 4：🧩 拼字積木大冒險 (純色盲測・6卡強制混淆母音・點擊格子退回) */
+    function initBuilderPage() {
+      updateBuilderDifficultyUI();
+      generateBuilderQuestion();
+    }
+
+    function setBuilderDifficulty(diff) {
+      stopAllAudio();
+      state.builder.difficulty = diff;
+      updateBuilderDifficultyUI();
+      generateBuilderQuestion();
+    }
+
+    function updateBuilderDifficultyUI() {
+      const btn3 = document.getElementById('bd-diff-3');
+      const btn6 = document.getElementById('bd-diff-6');
+      if (state.builder.difficulty === 3) {
+        btn3.className = 'btn-3d bg-emerald-500 text-white font-bold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow-sm scale-105';
+        btn6.className = 'btn-3d bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs';
+      } else {
+        btn6.className = 'btn-3d bg-amber-500 text-white font-bold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs shadow-sm scale-105';
+        btn3.className = 'btn-3d bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-xl text-[11px] sm:text-xs';
+      }
+    }
+
+    function handleBuilderVowelFilterChange() {
+      stopAllAudio();
+      const sel = document.getElementById('bd-vowel-filter');
+      state.builder.vowelFilter = sel ? sel.value : 'all';
+      generateBuilderQuestion();
+    }
+
+    function generateBuilderQuestion() {
+      stopAllAudio();
+      state.builder.answered = false;
+      state.builder.slots = [null, null, null]; // 清空 3 個目標格子
+
+      let pool = state.builder.vowelFilter === 'all'
+        ? ALL_WORDS_FLAT.slice()
+        : WORD_BANK[state.builder.vowelFilter].words.slice();
+
+      if (pool.length > 1 && state.builder.currentWord) {
+        pool = pool.filter(w => w.word !== state.builder.currentWord.word);
+      }
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      state.builder.currentWord = chosen;
+
+      // 產生候選卡片清單 (嚴格使用完全相同的純色樣式，徹底拿掉視覺色彩外掛)
+      const baseCards = [
+        { id: 'card-c1', letter: chosen.c1, used: false },
+        { id: 'card-v',  letter: chosen.v,  used: false },
+        { id: 'card-c2', letter: chosen.c2, used: false }
+      ];
+
+      if (state.builder.difficulty === 6) {
+        // 進階模式 (6 張卡)：
+        // 1. 強制加入 1 個「隨機相異母音」干擾項 (訓練聽辨母音)
+        const allVowels = ['a', 'e', 'i', 'o', 'u'];
+        const otherVowels = allVowels.filter(v => v !== chosen.v);
+        const forcedDistractorVowel = otherVowels[Math.floor(Math.random() * otherVowels.length)];
+        baseCards.push({ id: 'card-dist-v', letter: forcedDistractorVowel, used: false });
+
+        // 2. 加入 2 個隨機干擾子音
+        const alphabet = ['b', 'c', 'd', 'f', 'g', 'h', 'm', 'n', 'p', 'r', 's', 't', 'w', 'x'];
+        const existingConsonants = [chosen.c1, chosen.c2];
+        const distractorConsonants = alphabet
+          .filter(l => !existingConsonants.includes(l))
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 2);
+
+        distractorConsonants.forEach((c, idx) => {
+          baseCards.push({ id: `card-dist-c${idx}`, letter: c, used: false });
+        });
+      }
+
+      // 隨機打散候選卡片
+      state.builder.candidateCards = baseCards.sort(() => Math.random() - 0.5);
+
+      renderBuilderScene();
+    }
+
+    function renderBuilderScene() {
+      const item = state.builder.currentWord;
+      document.getElementById('bd-emoji').textContent = item.emoji;
+      document.getElementById('bd-meaning').textContent = item.meaningZh;
+
+      renderBuilderSlots();
+      renderBuilderCardsPool();
+
+      const feedback = document.getElementById('bd-feedback');
+      feedback.textContent = '由左到右點選積木（排錯可點格子拿回）：';
+      feedback.className = 'text-center font-bold text-slate-600 text-xs sm:text-sm shrink-0 min-h-[18px]';
+
+      const nextBtn = document.getElementById('btn-bd-next');
+      if (nextBtn) nextBtn.className = 'btn-3d bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-6 py-1.5 rounded-xl border-b-2 sm:border-b-4 border-slate-400 shadow text-xs sm:text-base';
+    }
+
+    function renderBuilderSlots() {
+      for (let i = 0; i < 3; i++) {
+        const cardObj = state.builder.slots[i];
+        const textEl = document.getElementById(`bd-slot-text-${i}`);
+        const hintEl = document.getElementById(`bd-slot-hint-${i}`);
+
+        if (cardObj) {
+          textEl.textContent = cardObj.letter;
+          hintEl.textContent = '點擊拿回';
+          hintEl.className = 'text-[9px] text-emerald-600 font-bold mt-0.5';
+        } else {
+          textEl.textContent = '';
+          const labels = ['字首', '母音', '字尾'];
+          hintEl.textContent = labels[i];
+          hintEl.className = 'text-[9px] text-slate-400 mt-0.5';
+        }
+      }
+    }
+
+    function renderBuilderCardsPool() {
+      const pool = document.getElementById('bd-cards-pool');
+      if (!pool) return;
+
+      const is6Cards = state.builder.candidateCards.length === 6;
+      // 6 張卡時排列為 2x3 完美矩陣，3 張卡時橫向排開
+      const gridCls = is6Cards
+        ? 'grid grid-cols-3 gap-2 sm:gap-3 max-w-xs sm:max-w-sm mx-auto'
+        : 'flex items-center justify-center gap-3 sm:gap-4';
+
+      pool.className = `shrink-0 p-1.5 sm:p-2 bg-emerald-100/50 rounded-2xl border border-emerald-200 min-h-[70px] ${gridCls}`;
+
+      pool.innerHTML = state.builder.candidateCards.map(c => {
+        if (c.used) {
+          return `
+            <div class="w-13 h-14 sm:w-16 sm:h-18 rounded-xl sm:rounded-2xl border border-dashed border-slate-300 bg-slate-100 opacity-30 flex items-center justify-center font-phonics text-2xl sm:text-3xl font-bold text-slate-400">
+              ${c.letter}
+            </div>
+          `;
+        }
+
+        // 徹底純色盲測：全部採用統一暖蜜糖木塊色，完全不洩漏母音！
+        return `
+          <button id="${c.id}" onclick="handleBuilderCardClick('${c.id}')" class="btn-3d bg-amber-100 hover:bg-amber-200 active:bg-amber-300 text-amber-950 border-2 border-amber-300 border-b-4 border-amber-600 w-13 h-14 sm:w-16 sm:h-18 rounded-xl sm:rounded-2xl shadow-md flex items-center justify-center font-phonics text-3xl sm:text-4xl font-black">
+            ${c.letter}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function speakBuilderTargetWord() {
+      if (state.builder.currentWord) speakWord(state.builder.currentWord.word);
+    }
+
+    // 由左至右填入第一個空格
+    function handleBuilderCardClick(cardId) {
+      if (state.builder.answered) return;
+
+      const card = state.builder.candidateCards.find(c => c.id === cardId);
+      if (!card || card.used) return;
+
+      const emptySlotIdx = state.builder.slots.findIndex(s => s === null);
+      if (emptySlotIdx === -1) return;
+
+      card.used = true;
+      state.builder.slots[emptySlotIdx] = card;
+      speakPhoneme(card.letter);
+
+      renderBuilderSlots();
+      renderBuilderCardsPool();
+
+      if (state.builder.slots.every(s => s !== null)) {
+        checkBuilderAnswer();
+      }
+    }
+
+    // 機制 2：點擊上方填好的格子，卡片立刻退回下方候選池！
+    function handleBuilderSlotClick(slotIdx) {
+      if (state.builder.answered) return;
+
+      const card = state.builder.slots[slotIdx];
+      if (!card) return;
+
+      playPopSound(390);
+      card.used = false;
+      state.builder.slots[slotIdx] = null;
+
+      const feedback = document.getElementById('bd-feedback');
+      feedback.textContent = `已把 "${card.letter}" 拿回下方囉，可以重新點選！`;
+      feedback.className = 'text-center font-bold text-slate-600 text-xs sm:text-sm shrink-0 min-h-[18px]';
+
+      renderBuilderSlots();
+      renderBuilderCardsPool();
+    }
+
+    // 自動判定
+    function checkBuilderAnswer() {
+      const item = state.builder.currentWord;
+      const assembledWord = state.builder.slots.map(s => s.letter).join('');
+      const feedback = document.getElementById('bd-feedback');
+
+      if (assembledWord === item.word) {
+        state.builder.answered = true;
+        feedback.textContent = `🎉 恭喜拼對了！就是 ${item.word}（${item.meaningZh}）！`;
+        feedback.className = 'text-center font-black text-emerald-700 text-sm sm:text-base shrink-0 min-h-[18px]';
+
+        playSuccessChime();
+        setTimeout(() => speakWord(item.word), 300);
+        triggerConfetti();
+        addStars(1);
+
+        const nextBtn = document.getElementById('btn-bd-next');
+        if (nextBtn) {
+          nextBtn.className = 'btn-3d bg-emerald-500 hover:bg-emerald-400 text-white font-black px-7 py-2 rounded-xl border-b-4 border-emerald-700 shadow-lg text-sm sm:text-lg animate-bounce';
+        }
+      } else {
+        // 排錯：溫和搖晃、不扣分、卡片留在原位讓孩子自行點擊退回
+        playGentleWoodTap();
+        const container = document.getElementById('bd-slots-container');
+        if (container) {
+          container.classList.remove('animate-wobble');
+          void container.offsetWidth;
+          container.classList.add('animate-wobble');
+        }
+
+        feedback.textContent = `💭 聽起來像 "${assembledWord}"，點一下排錯的格子拿回卡片喔！`;
+        feedback.className = 'text-center font-bold text-amber-800 text-xs sm:text-sm shrink-0 min-h-[18px]';
+      }
+    }
+
+    function nextBuilderQuestion() {
+      generateBuilderQuestion();
+    }
+
+    /* 10. 家長設定彈窗 */
+    function toggleSettingsModal(show) {
+      const modal = document.getElementById('settings-modal');
+      if (!modal) return;
+      if (show) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function setSpeechRate(rate) {
+      state.speechRate = rate;
+      const btnSlow = document.getElementById('rate-slow');
+      const btnNormal = document.getElementById('rate-normal');
+      if (rate < 0.85) {
+        btnSlow.className = 'py-1.5 rounded-lg font-bold border-2 border-sky-500 bg-sky-500 text-white text-xs';
+        btnNormal.className = 'py-1.5 rounded-lg font-bold border-2 border-sky-300 bg-white text-sky-800 text-xs';
+      } else {
+        btnNormal.className = 'py-1.5 rounded-lg font-bold border-2 border-sky-500 bg-sky-500 text-white text-xs';
+        btnSlow.className = 'py-1.5 rounded-lg font-bold border-2 border-sky-300 bg-white text-sky-800 text-xs';
+      }
+    }
+
+    // 初始化（嚴格無聲進場）
+    window.addEventListener('DOMContentLoaded', () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      }
+      loadSavedStars();
+      switchPage('home');
+    });
+  </script>
+</body>
+</html>
